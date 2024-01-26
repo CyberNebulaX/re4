@@ -27,9 +27,9 @@ DWORD FindProcessId(const std::wstring& processName) {
     DWORD processId = 0;
     HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (hSnap != INVALID_HANDLE_VALUE) {
-        PROCESSENTRY32W pe32; // Use the wide-character version
+        PROCESSENTRY32W pe32; 
         pe32.dwSize = sizeof(PROCESSENTRY32W);
-        if (Process32FirstW(hSnap, &pe32)) { // Use the wide-character function
+        if (Process32FirstW(hSnap, &pe32)) {
             do {
                 if (_wcsicmp(pe32.szExeFile, processName.c_str()) == 0) {
                     processId = pe32.th32ProcessID;
@@ -53,8 +53,8 @@ int PointerChainResolution(HANDLE hProcess, DWORD_PTR baseModuleAddress,  std::v
 }
 
 int main() {
-    const wchar_t* processName = L"re4.exe"; // Replace with the actual process name
-    DWORD procId = FindProcessId(processName); // Implement this function as shown before
+    const wchar_t* processName = L"re4.exe"; 
+    DWORD procId = FindProcessId(processName);
 
     if (procId == 0) {
         std::wcout << L"Process not found.\n";
@@ -67,7 +67,7 @@ int main() {
         return 1;
     }
 
-    DWORD_PTR baseAddress = GetModuleBaseAddress(procId, processName); // Implement this function as shown before
+    DWORD_PTR baseAddress = GetModuleBaseAddress(procId, processName);
     DWORD_PTR pointerAddress = baseAddress + 0x0DBB5C80; // Base offset from Cheat Engine
     std::vector<unsigned int> offsets = { 0x30, 0x60, 0x84 };
     DWORD_PTR ammoAddress = PointerChainResolution(hProcess, pointerAddress, offsets);
