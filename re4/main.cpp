@@ -2,6 +2,7 @@
 #include <tlhelp32.h>
 #include <iostream>
 #include <tchar.h>
+#include <thread>
 #include <vector>
 
 DWORD_PTR GetModuleBaseAddress(DWORD procId, LPCTSTR modName) {
@@ -80,19 +81,29 @@ int main() {
     DWORD_PTR ammoAddress = PointerChainResolution(hProcess, pointerAddress, offsets);
     int ammoValue = 0;
 
-    ReadProcessMemory(hProcess, LPCVOID(ammoAddress), &ammoValue, sizeof(ammoValue), 0);
+    std::wcout << L"Updating ammo value to 10 " << std::endl;
 
-    std::wcout << L"Ammo value: " << ammoValue << std::endl;
+    while (true) {
+        // Check if the process is still running
+        DWORD exitCode;
+        if (!GetExitCodeProcess(hProcess, &exitCode) || exitCode != STILL_ACTIVE) {
+            std::wcout << L"Process has exited." << std::endl;
+            break;
+        }
 
-    int desiredAmmo = 50;
-    bool updateAmmo = updateAmmoInPlace(hProcess, ammoAddress, desiredAmmo);
+        // Read the current ammo value
+        ReadProcessMemory(hProcess, LPCVOID(ammoAddress), &ammoValue, sizeof(ammoValue), nullptr);
 
-    if (updateAmmo == TRUE) {
-        std::wcout << L"Updated ammo value to " << desiredAmmo << std::endl;
+        // If ammo is below 10, refill it. The mag can not hold more than 10 bullets
+        if (ammoValue < 10) {
+            updateAmmoInPlace(hProcess, ammoAddress, 10);
+        }
+
+        // Sleep for a short duration to avoid hammering CPU and game memory
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-    else {
-        std::wcout << L"Failed to update ammo" << std::endl;
-    }
+
+    // remember to close the handle somewhere
 
     CloseHandle(hProcess);
     return 0;
