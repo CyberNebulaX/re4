@@ -42,7 +42,7 @@ DWORD FindProcessId(const std::wstring& processName) {
     return processId;
 }
 
-int PointerChainResolution(HANDLE hProcess, DWORD_PTR baseModuleAddress,  std::vector<unsigned int> offsets) {
+DWORD_PTR PointerChainResolution(HANDLE hProcess, DWORD_PTR baseModuleAddress,  std::vector<unsigned int> offsets) {
     DWORD_PTR addr = baseModuleAddress;
     for (unsigned int i = 0; i < offsets.size(); i++)
     {
@@ -50,6 +50,13 @@ int PointerChainResolution(HANDLE hProcess, DWORD_PTR baseModuleAddress,  std::v
         addr += offsets[i];
     }
     return addr;
+}
+
+bool updateAmmoInPlace(HANDLE hProcess, DWORD_PTR addressToWriteTo, unsigned int valueToWrite) {
+
+    bool success = FALSE;
+    success = WriteProcessMemory(hProcess, LPVOID(addressToWriteTo), &valueToWrite, sizeof(valueToWrite), 0);
+    return success;
 }
 
 int main() {
@@ -61,7 +68,7 @@ int main() {
         return 1;
     }
 
-    HANDLE hProcess = OpenProcess(PROCESS_VM_READ, FALSE, procId);
+    HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, procId);
     if (hProcess == NULL) {
         std::wcout << L"Failed to open process for reading.\n";
         return 1;
@@ -76,6 +83,16 @@ int main() {
     ReadProcessMemory(hProcess, LPCVOID(ammoAddress), &ammoValue, sizeof(ammoValue), 0);
 
     std::wcout << L"Ammo value: " << ammoValue << std::endl;
+
+    int desiredAmmo = 50;
+    bool updateAmmo = updateAmmoInPlace(hProcess, ammoAddress, desiredAmmo);
+
+    if (updateAmmo == TRUE) {
+        std::wcout << L"Updated ammo value to " << desiredAmmo << std::endl;
+    }
+    else {
+        std::wcout << L"Failed to update ammo" << std::endl;
+    }
 
     CloseHandle(hProcess);
     return 0;
